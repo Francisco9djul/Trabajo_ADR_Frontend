@@ -2,6 +2,7 @@ import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import '../styles/login.css';
+import Swal from 'sweetalert2'; 
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -13,10 +14,29 @@ export default function Login() {
     e.preventDefault();
     try {
       await login(username, password);
-      alert('Login exitoso');
-      navigate('/'); // redirige a Home
+
+    // Pop-up de éxito
+      Swal.fire({
+        title: 'Login exitoso',
+        text: 'Bienvenido a GYM FORCE',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#096ec5',
+      }).then(() => {
+        navigate('/'); // redirige a Home
+      });
+
     } catch (err) {
-      alert('Error en login');
+
+      // Pop-up de error
+      Swal.fire({
+        title: 'Error en login',
+        text: 'Usuario o contraseña incorrectos',
+        icon: 'error',
+        confirmButtonText: 'Reintentar',
+        confirmButtonColor: '#dc3545', 
+      });
+
     }
   };
 

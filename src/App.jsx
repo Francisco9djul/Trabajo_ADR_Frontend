@@ -1,14 +1,19 @@
+
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
+import RutinaFormPage from "./pages/RutinaFormPage.jsx"; 
 import PrivateRoute from './components/PrivateRoute.jsx';
 
 export default function App() {
   return (
     <Router>
       <Routes>
+        {/* Ruta pública */}
         <Route path="/login" element={<Login />} />
+
+        {/* Ruta protegida: Home */}
         <Route 
           path="/" 
           element={
@@ -16,6 +21,16 @@ export default function App() {
               <Home />
             </PrivateRoute>
           } 
+        />
+
+        {/* Ruta protegida: Página de Rutina */}
+        <Route
+          path="/rutina-form"
+          element={
+            <PrivateRoute>
+              <RutinaFormPage />  
+            </PrivateRoute>
+          }
         />
       </Routes>
     </Router>

@@ -1,0 +1,102 @@
+/* Contenedor general del form */
+.form-container {
+  display: block; /* antes era flex */
+  padding: 1.5rem; /* ajustar padding si quieres */
+  color: #333;
+}
+.form-container .title {
+  text-align: center;
+  font-size: 1.8rem; /* opcional, para hacerlo más grande */
+  margin-bottom: 1.5rem; /* opcional, espacio debajo */
+  color: #222; /* opcional, color del texto */
+}
+
+.form-container h2,
+.form-container h3,
+.form-container h4 {
+  color: #222; /* títulos en negro */
+  margin-bottom: 0.5rem;
+}
+
+/* Labels en negro */
+.form-container label {
+  font-weight: 600;
+  color: #000; 
+  margin-top: 0.5rem;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+/* Inputs estándar */
+.form-container input[type="text"],
+.form-container input[type="number"] {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.form-container input[type="text"]:focus,
+.form-container input[type="number"]:focus {
+  border-color: #096ec5;
+  outline: none;
+}
+
+/* Botones */
+.form-container button {
+  background: #096ec5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+  margin-top: 0.5rem;
+}
+
+.form-container button:hover {
+  background: #1a8cff;
+}
+
+/* Botones de eliminar (❌) y borrar bloque */
+.form-container button[type="button"] {
+  margin-left: 0.5rem;
+}
+
+.form-container ul {
+  margin-top: 1rem;
+  padding-left: 1.2rem;
+}
+
+/* Cada bloque de ejercicio completo */
+.ejercicio-block {
+  margin-bottom: 1rem; /* espacio entre bloques de ejercicios */
+}
+
+/* Select de búsqueda de ejercicio */
+.ejercicio-select {
+  margin-bottom: 0.6rem; /* espacio entre select y los inputs */
+}
+
+/* Inputs de series y repeticiones */
+.ejercicio-details {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+/* Inputs dentro de detalle */
+.ejercicio-details input {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #333;
+  width: 80px; /* ancho fijo para series y repeticiones */
+}
