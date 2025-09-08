@@ -4,7 +4,7 @@
   background-color: light dark;;
   display: flex;
   flex-direction: column;
-  padding-top: 25rem; /* espacio entre la navbar y la primera card */
+  padding-top: 16rem; /* espacio entre la navbar y la primera card */
 }
 
 

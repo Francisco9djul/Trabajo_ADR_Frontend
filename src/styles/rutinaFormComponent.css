@@ -3,6 +3,7 @@
   display: block; /* antes era flex */
   padding: 1.5rem; /* ajustar padding si quieres */
   color: #333;
+  min-width: 500px; 
 }
 .form-container .title {
   text-align: center;
@@ -100,3 +101,20 @@
   color: #333;
   width: 80px; /* ancho fijo para series y repeticiones */
 }
+
+/*Validaciones*/
+.form-container input.input-error {
+  border: 2px solid red !important; /* fuerza borde rojo */
+  outline: none;
+}
+
+.form-container input.input-error::placeholder {
+  color: red;
+  opacity: 0.9;
+}
+
+/* Contenedor de AsyncSelect con error */
+.async-select-error .react-select__control {
+  border-color: red !important;
+}
+

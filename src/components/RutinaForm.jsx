@@ -4,6 +4,8 @@ import { AuthContext } from "../context/AuthContext";
 import "../styles/rutinaFormComponent.css";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+
 
 // estilos personalizados
 const customSelectStyles = {
@@ -37,7 +39,16 @@ const customSelectStyles = {
 export default function RutinaForm() {
   const { token } = useContext(AuthContext);
    const navigate = useNavigate(); 
+   const { register, handleSubmit,control, getValues, setValue,  formState: { errors } } = useForm({
+    defaultValues: {
+      bloqueNombre: "",
+      bloqueDia: "",
+      ejercicios: [{ ejercicio: null, series: 0, repeticiones: 0 }],
+    }
+  });
+  const [agregandoBloque, setAgregandoBloque] = useState(false);
 
+  
   const [rutina, setRutina] = useState({
     nombre: "",
     objetivo: "",
@@ -48,7 +59,7 @@ export default function RutinaForm() {
   const [bloqueNombre, setBloqueNombre] = useState("");
   const [bloqueDia, setBloqueDia] = useState(""); // <-- Estado para el día
   const [ejercicios, setEjercicios] = useState([
-    { ejercicio: null, series: "", repeticiones: "" },
+  { ejercicio: null, series: 0, repeticiones: 0 },
   ]);
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState(null);
 
@@ -111,68 +122,138 @@ export default function RutinaForm() {
   };
 
   const agregarEjercicio = () => {
-    setEjercicios([
-      ...ejercicios,
-      { ejercicio: null, series: "", repeticiones: "" },
-    ]);
+  setEjercicios([...ejercicios, { ejercicio: null, series: "", repeticiones: "" }]);
+  setEjercicioError([...ejercicioError, { ejercicio: false, series: false, repeticiones: false }]);
   };
 
   const eliminarEjercicio = (index) => {
     setEjercicios(ejercicios.filter((_, i) => i !== index));
+    setEjercicioError(ejercicioError.filter((_, i) => i !== index));
   };
 
-  // Guardar bloque nuevo
+
+
+  const [bloqueError, setBloqueError] = useState({ nombre: false, dia: false });
+  const [ejercicioError, setEjercicioError] = useState(
+    ejercicios.map(() => ({ ejercicio: false, series: false, repeticiones: false }))
+  );
+
+  // Antes de guardar bloque
+  const validarBloque = () => {
+    let valido = true;
+
+    const nombreValido = bloqueNombre.trim() !== "";
+    const diaValido = bloqueDia.trim() !== "";
+    setBloqueError({ nombre: !nombreValido, dia: !diaValido });
+    if (!nombreValido || !diaValido) valido = false;
+
+    const erroresEj = ejercicios.map((e) => ({
+      ejercicio: !e.ejercicio,
+      series: !e.series || e.series <= 0,
+      repeticiones: !e.repeticiones || e.repeticiones <= 0,
+    }));
+    setEjercicioError(erroresEj);
+
+    if (erroresEj.some((e) => e.ejercicio || e.series || e.repeticiones)) valido = false;
+
+    return valido;
+  };
+
+  
+
+  // ---------Guardar bloque nuevo----------
   const handleAddBloque = () => {
-    if (!bloqueNombre || ejercicios.length === 0) return;
 
-    const ejerciciosValidos = ejercicios.filter(e => e.ejercicio && e.ejercicio.value);
+    // Sincronizar estado local con react-hook-form
+    setValue("bloqueNombre", bloqueNombre);
+    setValue("bloqueDia", bloqueDia)
 
-    setRutina({
-      ...rutina,
+    const values = getValues(); // obtiene valores actuales del formulario
+
+    // Validar bloque
+    if (!values.bloqueNombre || !values.bloqueDia) {
+      Swal.fire({ icon: "warning", title: "Debe completar nombre y día del bloque" });
+      return;
+    }
+
+    const ejerciciosValidos = values.ejercicios.filter(e => e.ejercicio && e.ejercicio.value);
+
+    if (ejerciciosValidos.length === 0) {
+      Swal.fire({ icon: "warning", title: "Debe agregar al menos un ejercicio válido" });
+      return;
+    }
+
+    // Guardar bloque en estado rutina
+    setRutina(prev => ({
+      ...prev,
       bloques: [
-        ...rutina.bloques,
+        ...prev.bloques,
         {
-          nombre: bloqueNombre,
-          dia: bloqueDia,
-          ejercicios: ejerciciosValidos.map((e) => ({
+          nombre: values.bloqueNombre,
+          dia: values.bloqueDia,
+          ejercicios: ejerciciosValidos.map(e => ({
             ejercicioId: e.ejercicio.value,
             ejercicio: e.ejercicio.label,
-            series: e.series,
-            repeticiones: e.repeticiones,
-            label: e.ejercicio.label, // opcional, solo para UI
+            series: Number(e.series),
+            repeticiones: Number(e.repeticiones),
           })),
         },
       ],
-    });
+    }));
 
+    // Limpiar inputs y estado local
+    setValue("bloqueNombre", "");
+    setValue("bloqueDia", "");
+    setValue("ejercicios", []);
     setBloqueNombre("");
     setBloqueDia("");
     setEjercicios([{ ejercicio: null, series: "", repeticiones: "" }]);
+    setEjercicioError([{ ejercicio: false, series: false, repeticiones: false }]);
+
+    // Habilitar nuevamente el botón de agregar bloque
+    setAgregandoBloque(false);
   };
 
-  // Guardar cambios al editar bloque
+  // ---------Guardar cambios al editar bloque-------
   const handleGuardarEdicion = () => {
     if (bloqueSeleccionado === null) return;
 
-    const ejerciciosValidos = ejercicios.filter(e => e.ejercicio && e.ejercicio.value);
+    // Sincronizar estado local con react-hook-form
+    setValue("bloqueNombre", bloqueNombre);
+    setValue("bloqueDia", bloqueDia);
+
+    const values = getValues(); // toma los valores actuales del formulario
+
+    const ejerciciosActualizados = values.ejercicios
+      .filter(e => e.ejercicio && e.ejercicio.value)
+      .map(e => ({
+        ejercicio: e.ejercicio.label,
+        ejercicioId: e.ejercicio.value,
+        series: Number(e.series),
+        repeticiones: Number(e.repeticiones),
+      }));
 
     const bloquesActualizados = [...rutina.bloques];
     bloquesActualizados[bloqueSeleccionado] = {
-      nombre: bloqueNombre,
-      dia: bloqueDia,
-      ejercicios: ejerciciosValidos.map(e => ({
-        ejercicio: e.ejercicio.label,
-        ejercicioId: e.ejercicio.value,
-        series: e.series,
-        repeticiones: e.repeticiones,
-      })),
+      nombre: values.bloqueNombre,
+      dia: values.bloqueDia,
+      ejercicios: ejerciciosActualizados,
     };
 
     setRutina({ ...rutina, bloques: bloquesActualizados });
+
+    // Limpiar edición y inputs
     setBloqueSeleccionado(null);
+    setValue("bloqueNombre", "");
+    setValue("bloqueDia", "");
+    setValue("ejercicios", []);
     setBloqueNombre("");
     setBloqueDia("");
     setEjercicios([{ ejercicio: null, series: "", repeticiones: "" }]);
+    setEjercicioError([{ ejercicio: false, series: false, repeticiones: false }]);
+
+    // Habilitar nuevamente el botón de agregar bloque
+    setAgregandoBloque(false);
   };
 
   // Eliminar un ejercicio de un bloque ya guardado
@@ -204,17 +285,25 @@ export default function RutinaForm() {
     setBloqueSeleccionado(index);
     setBloqueNombre(rutina.bloques[index].nombre);
     setBloqueDia(rutina.bloques[index].dia || "");
-    setEjercicios(
-      rutina.bloques[index].ejercicios.map((e) => ({
-        ejercicio: { value: e.ejercicioId, label: e.ejercicio },
-        series: e.series,
-        repeticiones: e.repeticiones,
-      }))
-    );
+    const ejerciciosBloque = rutina.bloques[index].ejercicios.map((e) => ({
+      ejercicio: { value: e.ejercicioId, label: e.ejercicio },
+      series: e.series,
+      repeticiones: e.repeticiones,
+    }));
+    setEjercicios(ejerciciosBloque);
+    setEjercicioError(ejerciciosBloque.map(() => ({ ejercicio: false, series: false, repeticiones: false })));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [alumnoError, setAlumnoError] = useState(false);
+      
+  const onSubmitRutina = async (data) => {
+    // Validación de bloques y ejercicios
+    if (!data.alumno) {
+      setAlumnoError(true);
+      return;
+    } else {
+      setAlumnoError(false);
+    }
 
     const ejerciciosInvalidos = rutina.bloques.some(b =>
       b.ejercicios.some(ej => !ej.ejercicioId)
@@ -225,29 +314,28 @@ export default function RutinaForm() {
         icon: "warning",
         title: "Oops...",
         text: "Por favor selecciona un ejercicio para todos los campos.",
-        confirmButtonColor: "#096ec5" // Azul
+        confirmButtonColor: "#096ec5"
       });
       return;
     }
 
-    // Preparar data para enviar al backend
+    // Preparar objeto para enviar al backend
     const rutinaData = {
-      nombre: rutina.nombre,
-      objetivo: rutina.objetivo,
-      usuario: rutina.alumno?.value, 
+      nombre: data.nombre,       // viene del input
+      objetivo: data.objetivo,   // viene del input
+      usuario: data.alumno.value, // viene del estado
       bloques: rutina.bloques.map((b) => ({
-      nombre: b.nombre,
-      dia: b.dia || "",
-      bloque_ejercicios: b.ejercicios.map((e) => ({
-        ejercicioId: Number(e.ejercicioId),
-        series: Number(e.series) || 0,
-        repeticiones: Number(e.repeticiones) || 0,
+        nombre: b.nombre,
+        dia: b.dia || "",
+        bloque_ejercicios: b.ejercicios.map((e) => ({
+          ejercicioId: Number(e.ejercicioId),
+          series: Number(e.series) || 0,
+          repeticiones: Number(e.repeticiones) || 0,
+        })),
       })),
-    })),
     };
 
     try {
-      console.log(rutinaData)
       const res = await fetch("http://localhost:8000/api/rutinas/", {
         method: "POST",
         headers: {
@@ -264,26 +352,23 @@ export default function RutinaForm() {
           icon: "error",
           title: "Error",
           text: "No se pudo crear la rutina. Intenta de nuevo.",
-          confirmButtonColor: "#096ec5" // Azul
+          confirmButtonColor: "#096ec5"
         });
         return;
       }
 
-      const data = await res.json();
-      console.log("Rutina creada:", data);
+      const dataResp = await res.json();
+      console.log("Rutina creada:", dataResp);
 
-
-      // Pop up de éxito + redirección
       Swal.fire({
         icon: "success",
         title: "¡Rutina creada!",
         text: "Tu rutina fue creada con éxito ✅",
         confirmButtonText: "Ir al Home",
-        confirmButtonColor: "#096ec5" // Azul
+        confirmButtonColor: "#096ec5"
       }).then(() => {
-        navigate("/"); // redirige al home después de cerrar el pop up
+        navigate("/"); // redirige al home
       });
-
 
     } catch (err) {
       console.error(err);
@@ -291,107 +376,219 @@ export default function RutinaForm() {
         icon: "error",
         title: "Error",
         text: "Hubo un problema con el servidor.",
-        confirmButtonColor: "#096ec5" // Azul
+        confirmButtonColor: "#096ec5"
       });
     }
+  };
+
+  const cancelarBloque = () => {
+    setAgregandoBloque(false);     // vuelve a mostrar el botón de agregar
+    setBloqueSeleccionado(null);   // limpia selección
+    setBloqueNombre("");           // limpia inputs
+    setBloqueDia("");
+    setEjercicios([{ ejercicio: null, series: "", repeticiones: "" }]);
+    setEjercicioError([{ ejercicio: false, series: false, repeticiones: false }]);
+    setValue("bloqueNombre", "");
+    setValue("bloqueDia", "");
+    setValue("ejercicios", []);
   };
 
   return (
     <div className="form-container">
       <h2 className="title">Crear Rutina</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmitRutina)}>
+
+        {/* Nombre de la rutina */}
         <label>Nombre de la rutina</label>
         <input
           type="text"
-          value={rutina.nombre}
-          onChange={(e) => setRutina({ ...rutina, nombre: e.target.value })}
+          {...register("nombre", {
+            required: "El nombre de la rutina es obligatorio",
+            minLength: { value: 3, message: "Debe tener al menos 3 caracteres" },
+            maxLength: { value: 50, message: "No puede superar 50 caracteres" }
+          })}
+          className={errors.nombre ? "input-error" : ""}
+          placeholder={errors.nombre ? errors.nombre.message : "Ingrese el nombre de la rutina"}
         />
 
+        {/* Objetivo */}
         <label>Objetivo</label>
+        {/* Mensaje de error si no es el requerido */}
+        {errors.objetivo && errors.objetivo.type !== "required" && (
+          <p className="error-message">{errors.objetivo.message}</p>
+        )}
+
         <input
           type="text"
-          value={rutina.objetivo}
-          onChange={(e) => setRutina({ ...rutina, objetivo: e.target.value })}
+          {...register("objetivo", {
+            required: "El objetivo es obligatorio",
+            minLength: { value: 5, message: "Debe tener al menos 5 caracteres" },
+            maxLength: { value: 100, message: "No puede superar 100 caracteres" }
+          })}
+          className={errors.objetivo ? "input-error" : ""}
+          placeholder={errors.objetivo ? errors.objetivo.message : "Ingrese el objetivo"}
         />
 
+        {/* Usuario */}
         <label>Seleccionar Usuario</label>
-        <AsyncSelect
-          cacheOptions
-          loadOptions={loadAlumnos}
-          defaultOptions
-          value={rutina.alumno}
-          onChange={(option) => setRutina({ ...rutina, alumno: option })}
-          placeholder="Escribe nombre o apellido..."
-          styles={customSelectStyles}
+        <Controller
+          name="alumno"
+          control={control}
+          rules={{ required: "Debe seleccionar un Usuario" }}
+          render={({ field, fieldState }) => (
+            <AsyncSelect
+              {...field}
+              cacheOptions
+              loadOptions={loadAlumnos}
+              defaultOptions
+              onChange={(option) => {
+                field.onChange(option);
+                setRutina(prev => ({ ...prev, alumno: option })); // <-- sincroniza con estado
+              }}
+              value={field.value}
+              placeholder={fieldState.error ? fieldState.error.message : "Escribe nombre o apellido..."}
+              styles={{
+                ...customSelectStyles,
+                control: (provided) => ({
+                  ...provided,
+                  borderColor: fieldState.error ? "red" : "#ccc",
+                }),
+                placeholder: (provided) => ({
+                  ...provided,
+                  color: fieldState.error ? "red" : "#999",
+                }),
+              }}
+            />
+          )}
         />
 
         <h3>{bloqueSeleccionado !== null ? "Editar Bloque" : "Agregar Bloque"}</h3>
-        <input
-          type="text"
-          placeholder="Nombre del bloque (ej: Piernas)"
-          value={bloqueNombre}
-          onChange={(e) => setBloqueNombre(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Día del bloque (ej: Lunes)"
-          value={bloqueDia}
-          onChange={(e) => setBloqueDia(e.target.value)}
-        />
 
-        <h4>Ejercicios del bloque</h4>
-        {ejercicios.map((e, index) => (
-          <div key={index}  className="ejercicio-block">
-            {/* Select de búsqueda de ejercicio */}
-            <div className="ejercicio-select">
-              <AsyncSelect
-                cacheOptions
-                loadOptions={loadEjercicios}
-                defaultOptions
-                value={e.ejercicio}
-                onChange={(option) =>
-                  handleEjercicioChange(index, "ejercicio", option)
-                }
-                placeholder="Buscar ejercicio..."
-                styles={customSelectStyles}
-              />
-            </div>
-            <div className="ejercicio-details">
-              <input
-                type="number"
-                placeholder="Series"
-                value={e.series}
-                onChange={(ev) =>
-                  handleEjercicioChange(index, "series", ev.target.value)
-                }
-              />
-              <input
-                type="number"
-                placeholder="Repeticiones"
-                value={e.repeticiones}
-                onChange={(ev) =>
-                  handleEjercicioChange(index, "repeticiones", ev.target.value)
-                }
-              />
-              <button type="button" onClick={() => eliminarEjercicio(index)}>
-                ❌
-              </button>
-            </div>
-          </div>
-        ))}
-
-        <button type="button" onClick={agregarEjercicio}>
-          ➕ Agregar ejercicio
-        </button>
-
-        {bloqueSeleccionado === null ? (
-          <button type="button" onClick={handleAddBloque}>
-            📦 Guardar bloque
+        {!agregandoBloque && bloqueSeleccionado === null ? (
+          <button type="button" onClick={() => setAgregandoBloque(true)}>
+            ➕ Agregar bloque
           </button>
         ) : (
-          <button type="button" onClick={handleGuardarEdicion}>
-            💾 Guardar cambios
-          </button>
+          <>
+        
+
+            {/* Nombre del bloque */}
+            <input
+              type="text"
+              {...register("bloqueNombre", {
+                required: "El nombre del bloque es obligatorio",
+                minLength: { value: 3, message: "Debe tener al menos 3 caracteres" },
+                maxLength: { value: 50, message: "No puede superar 50 caracteres" }
+              })}
+              className={errors.bloqueNombre ? "input-error" : ""}
+              placeholder={errors.bloqueNombre ? errors.bloqueNombre.message : "Nombre del bloque (ej: Piernas)"}
+              value={bloqueNombre}
+              onChange={(e) => setBloqueNombre(e.target.value)}
+            />
+
+            {/* Día del bloque */}
+            <input
+              type="text"
+              {...register("bloqueDia", {
+                required: "El día del bloque es obligatorio"
+              })}
+              className={errors.bloqueDia ? "input-error" : ""}
+              placeholder={errors.bloqueDia ? errors.bloqueDia.message : "Día del bloque (ej: Lunes)"}
+              value={bloqueDia}
+              onChange={(e) => setBloqueDia(e.target.value)}
+            />
+
+            <h4>Ejercicios del bloque</h4>
+            {ejercicios.map((e, index) => (
+              <div key={index} className="ejercicio-block">
+                {/* Select de ejercicio */}
+                <Controller
+                  name={`ejercicios.${index}.ejercicio`}
+                  control={control}
+                  rules={bloqueSeleccionado === null ? { required: "Debe seleccionar un ejercicio" } : {}} 
+                  render={({ field, fieldState }) => (
+                    <AsyncSelect
+                      {...field}
+                      cacheOptions
+                      loadOptions={loadEjercicios}
+                      defaultOptions
+                      onChange={(option) => field.onChange(option)} // solo react-hook-form
+                      value={field.value ?? null} // evita uncontrolled input
+                      placeholder={fieldState.error ? fieldState.error.message : "Buscar ejercicio..."}
+                      styles={{
+                        ...customSelectStyles,
+                        control: (provided) => ({
+                          ...provided,
+                          borderColor: fieldState.error ? "red" : "#ccc",
+                        }),
+                        placeholder: (provided) => ({
+                          ...provided,
+                          color: fieldState.error ? "red" : "#999",
+                        }),
+                      }}
+                    />
+                  )}
+                />
+
+                <div className="ejercicio-details">
+                  {/* Series */}
+                  <Controller
+                    name={`ejercicios.${index}.series`}
+                    control={control}
+                    rules={bloqueSeleccionado === null ? { required: "Ingrese series", min: { value: 1, message: "Series > 0" } } : {}}
+                    render={({ field, fieldState }) => (
+                      <input
+                        type="number"
+                        {...field}
+                        placeholder={fieldState.error ? fieldState.error.message : "Series"}
+                        style={{ borderColor: fieldState.error ? "red" : "#ccc" }}
+                        value={field.value ?? ""} // valor inicial vacío evita warning
+                        min={0}
+                        onChange={(e) => field.onChange(Number(e.target.value))} // asegura que sea número
+                      />
+                    )}
+                  />
+
+                  {/* Repeticiones */}
+                  <Controller
+                    name={`ejercicios.${index}.repeticiones`}
+                    control={control}
+                    rules={bloqueSeleccionado === null ? { required: "Ingrese Repeticiones", min: { value: 1, message: "Repeticiones > 0" } } : {}}
+                    render={({ field, fieldState }) => (
+                      <input
+                        type="number"
+                        {...field}
+                        placeholder={fieldState.error ? fieldState.error.message : "Repeticiones"}
+                        style={{ borderColor: fieldState.error ? "red" : "#ccc" }}
+                        value={field.value ?? ""} // valor inicial vacío evita warning
+                        min={0}
+                        onChange={(e) => field.onChange(Number(e.target.value))} // asegura que sea número
+                      />
+                    )}
+                  />
+
+                  <button type="button" onClick={() => eliminarEjercicio(index)}>❌</button>
+                </div>
+              </div>
+            ))}
+            <button type="button" onClick={agregarEjercicio}>
+              ➕ Agregar ejercicio
+            </button>
+
+            {bloqueSeleccionado === null ? (
+              <button type="button" onClick={handleAddBloque}>
+                📦 Guardar bloque
+              </button>
+            ) : (
+              <button type="button" onClick={handleGuardarEdicion}>
+                💾 Guardar cambios
+              </button>
+            )}
+
+            <button type="button" onClick={cancelarBloque} style={{ marginLeft: "8px", color: "red" }}>
+              ❌ Cancelar
+            </button>
+          </>
         )}
 
         <h3>Bloques añadidos</h3>
