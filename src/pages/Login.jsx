@@ -59,6 +59,16 @@ export default function Login() {
               placeholder="Contraseña"
             />
             <button type="submit">Login</button>
+            <p>
+              ¿No tienes cuenta?{" "}
+              <span
+                className="link"
+                onClick={() => navigate("/register")}
+                style={{ color: "#096ec5", cursor: "pointer" }}
+              >
+                Registrarse
+              </span>
+            </p>
           </form>
         </div>
       </div>
