@@ -3,7 +3,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
-import RutinaFormPage from "./pages/RutinaFormPage.jsx"; 
+import RutinaFormPage from "./pages/RutinaFormPage.jsx";
+import RutinasPage from "./pages/RutinasPage";
 import PrivateRoute from './components/PrivateRoute.jsx';
 
 export default function App() {
@@ -31,7 +32,19 @@ export default function App() {
               <RutinaFormPage />  
             </PrivateRoute>
           }
+          
         />
+
+        {/* Ruta protegida: Ver Rutinas (solo user) */}
+        <Route
+          path="/rutinas"
+          element={
+            <PrivateRoute allowedRoles={['user']}>
+              <RutinasPage />  
+            </PrivateRoute>
+          }
+        />
+
       </Routes>
     </Router>
   );

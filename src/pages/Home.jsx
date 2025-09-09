@@ -28,7 +28,7 @@ export default function Home() {
           {user?.role === 'profesor' && <button onClick={() => navigate("/rutina-form")}>Crear Rutina</button>} 
 
           {/* Mostrar "Mi Rutina" solo si es usuario */}
-          {user?.role === 'user' && <button>Mi Rutina</button>}
+          {user?.role === 'user' && <button onClick={() => navigate("/rutinas")}>Mi Rutina</button>}
 
           {/* Botónes visibles para todos */}
           <button onClick={handleLogout}>Salir</button>
