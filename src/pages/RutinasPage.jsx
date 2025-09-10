@@ -46,7 +46,7 @@ export default function RutinasPage() {
   }, [token]);
 
   return (
-    <div className="main-container">
+    <div className="main-container-user">
       {/* Navbar arriba */}
       <div className="navbar">
         <h2 className="logo">GYM FORCE</h2>

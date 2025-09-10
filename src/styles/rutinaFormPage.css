@@ -4,7 +4,7 @@
   background-color: light dark;;
   display: flex;
   flex-direction: column;
-  padding-top: 16rem; /* espacio entre la navbar y la primera card */
+  padding-top: 7rem; /* espacio entre la navbar y la primera card */
 }
 
 
@@ -59,6 +59,9 @@
   max-width: 600px;
   margin: 80px auto 2rem auto; /* margen superior fijo igual al alto de la navbar + separación */
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  max-height: calc(100vh - 160px); /* más espacio */
+  overflow-y: auto;
+  padding-bottom: 2rem; /* colchón extra dentro de la card */
 }
 
 .logo {

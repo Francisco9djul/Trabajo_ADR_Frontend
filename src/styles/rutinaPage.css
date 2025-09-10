@@ -1,3 +1,13 @@
+/* Contenedor principal de la página */
+.main-container-user {
+  min-height: 100vh;
+  background-color: light dark;;
+  display: flex;
+  flex-direction: column;
+  padding-top: 16rem; /* espacio entre la navbar y la primera card */
+}
+
+
 /* Contenedor principal de la página de rutinas */
 .rutinas-container {
   min-height: 100vh;
